@@ -1,0 +1,20 @@
+{
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "eslint.format.enable": true,
+    "editor.tabSize": 4,
+    "files.trimTrailingWhitespace": true,
+    "files.eol": "\n",
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "typescript.preferences.quoteStyle": "single",
+    "typescript.preferences.importModuleSpecifierEnding": "minimal",
+    "javascript.updateImportsOnFileMove.enabled": "always",
+    "javascript.preferences.quoteStyle": "single",
+    "javascript.preferences.importModuleSpecifierEnding": "minimal",
+    "eslint.lintTask.enable": true,
+    "git.autofetch": true,
+    "editor.linkedEditing": true,
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "noEmit": true,
+        "esModuleInterop": true,
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "target": "es2020",
+        "baseUrl": ".",
+        "strict": true
+    }
+}

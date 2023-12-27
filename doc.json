@@ -1,0 +1,29 @@
+{
+    "name": "axe-throw",
+    "description": "A typed safe Omegga plugin.",
+    "author": "CriticalFloof",
+    "config": {
+        "Trusted_Role": {
+            "description": "Users who can set up the axethrow game.",
+            "default": "Admin",
+            "type": "role"
+        },
+        "Start_Game_Length": {
+            "description": "How long the game should last, not including timer increases. (seconds)",
+            "default": 10,
+            "type": "number"
+        },
+        "Load_Cache": {
+            "description": "Loads the setup from the plugin's cache, useful for persisting the setup logic between sessions.",
+            "default": true,
+            "type": "boolean"
+        }
+    },
+    "commands": [
+        {
+            "name": "axethrow_setup",
+            "description": "starts the axe throw setup procedure.",
+            "example": "/axethrow_setup"
+        }
+    ]
+}
