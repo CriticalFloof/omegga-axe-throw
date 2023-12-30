@@ -42,7 +42,7 @@ export default class Runtime {
             if (interact.message !== "axethrow_start") return;
 
             if (this.axethrow && this.axethrow.isSetup) {
-                if (this.axethrow.playInitiator !== null) {
+                if (this.axethrow.gameState.player !== null) {
                     this.omegga.whisper(interact.player.name, "Someone is already playing the game!");
                 } else {
                     this.axethrow.play(interact.player.name);

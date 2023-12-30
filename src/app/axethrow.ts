@@ -3,22 +3,43 @@ import Runtime, { Storage } from "./main";
 import ProjectileTracker from "src/lib/projectile_tracker";
 import { checkLineBox } from "./intersection";
 
+type Target = {
+    brick: Brick;
+    isMoving: boolean;
+    startPos: Vector;
+    endPos: Vector;
+    speed: number;
+};
+
+type GameState = {
+    player: string | null;
+    finishDate: number;
+    playerScore: number;
+    targetSize: number;
+    movingTargetPercent: number;
+    movingTargetSpeed: number;
+    movingTargetSpeedVariance: number;
+};
+
 export default class Axethrow {
     public isSetup: boolean = false;
-    public playInitiator: string | null = null;
     private setupInitiator: string | null = null;
 
     public startButtonPosition: Vector = [0, 0, 0];
     public targetSurface: Brick = { size: [0, 0, 0], position: [0, 0, 0] };
-    private targetBricks: Brick[] = [];
+    private targetBricks: Target[] = [];
 
-    private startingtargetSize: number = 24;
+    private startingGameState: GameState = {
+        player: null,
+        finishDate: 0,
+        playerScore: 0,
+        targetSize: 24,
+        movingTargetPercent: 0,
+        movingTargetSpeed: 6,
+        movingTargetSpeedVariance: 0,
+    };
 
-    private currenttargetSize: number = this.startingtargetSize;
-
-    public score: number = 0;
-
-    private whenGameFinished: number = 0;
+    public gameState: GameState = this.startingGameState;
 
     public static fromCache(cache: Storage["cache"]): Axethrow {
         let axethrow = new Axethrow();
@@ -78,13 +99,13 @@ export default class Axethrow {
     }
 
     public play(player_name: string) {
-        this.score = 0;
-        this.playInitiator = player_name;
-        this.currenttargetSize = this.startingtargetSize;
+        this.gameState = {
+            ...this.startingGameState,
+            player: player_name,
+            finishDate: Date.now() + Runtime.config.Start_Game_Length * 1000,
+        };
 
         const player = Runtime.omegga.getPlayer(player_name);
-
-        this.whenGameFinished = Date.now() + Runtime.config.Start_Game_Length * 1000;
 
         const projectile_tracker = new ProjectileTracker("Handaxe", 150);
 
@@ -122,11 +143,14 @@ export default class Axethrow {
 
             for (let i = 0; i < this.targetBricks.length; i++) {
                 const target = this.targetBricks[i];
-                if (checkLineBox(target, [line[0], extrudedEndPoint], hit)) {
-                    this.score += 1;
-                    Runtime.omegga.clearRegion({ center: target.position, extent: target.size });
+                if (checkLineBox(target.brick, [line[0], extrudedEndPoint], hit)) {
+                    this.gameState = {
+                        ...this.gameState,
+                        playerScore: this.gameState.playerScore + 1,
+                        finishDate: this.gameState.finishDate + 2 * 1000,
+                    };
+                    Runtime.omegga.clearRegion({ center: target.brick.position, extent: target.brick.size });
                     this.targetBricks.splice(i, 1);
-                    this.whenGameFinished += 2 * 1000;
                 }
             }
 
@@ -168,93 +192,48 @@ export default class Axethrow {
 
         const interval1 = setInterval(() => {
             player?.giveItem("Weapon_Handaxe");
-            const secondsLeft = Math.ceil((this.whenGameFinished - Date.now()) / 1000);
+            const secondsLeft = Math.ceil((this.gameState.finishDate - Date.now()) / 1000);
             Runtime.omegga.middlePrint(player_name, `${secondsLeft}`);
 
-            if (this.whenGameFinished - Date.now() < 0) {
+            if (this.gameState.finishDate - Date.now() < 0) {
                 clearInterval(interval1);
                 for (let i = 0; i < 10; i++) {
                     player?.takeItem("Weapon_Handaxe");
                 }
-                Runtime.omegga.whisper(this.playInitiator!, `You hit ${this.score} targets!`);
-                this.playInitiator = null;
+                Runtime.omegga.whisper(this.gameState.player!, `Your score is <color="33ff33">${this.gameState.playerScore}</>!`);
+                this.gameState.player = null;
                 projectile_tracker.stop();
 
                 for (let i = 0; i < this.targetBricks.length; i++) {
                     const target = this.targetBricks[i];
-                    Runtime.omegga.clearRegion({ center: target.position, extent: target.size });
+                    Runtime.omegga.clearRegion({ center: target.brick.position, extent: target.brick.size });
                 }
                 this.targetBricks = [];
             }
         }, 1000);
 
         const interval2 = setInterval(() => {
-            this.currenttargetSize = Math.max(this.currenttargetSize - this.startingtargetSize / 60, 4);
+            // Update global game state.
+            this.gameState.targetSize = Math.max(this.gameState.targetSize - this.startingGameState.targetSize / 60, 4);
 
-            const difference: Vector = [
-                this.targetSurface.position[0] - this.startButtonPosition[0],
-                this.targetSurface.position[1] - this.startButtonPosition[1],
-                this.targetSurface.position[2] - this.startButtonPosition[2],
-            ];
-            const absoluteDifference: Vector = difference.map(Math.abs) as Vector;
-            const axis: number = absoluteDifference.indexOf(Math.max(...absoluteDifference));
-            const shouldFacePositive: boolean = difference[axis] < 0;
-
-            const targetThickness = 2;
-            const targetAxisPositionOffset = shouldFacePositive
-                ? this.targetSurface.position[axis] + this.targetSurface.size[axis] + targetThickness
-                : this.targetSurface.position[axis] + this.targetSurface.size[axis] - targetThickness;
-            let targetBrickSize: Vector = [0, 0, 0];
-
-            if (axis === 0) {
-                targetBrickSize = [targetThickness, Math.trunc(this.currenttargetSize), Math.trunc(this.currenttargetSize)];
-            } else if (axis === 1) {
-                targetBrickSize = [Math.trunc(this.currenttargetSize), targetThickness, Math.trunc(this.currenttargetSize)];
-            } else {
-                targetBrickSize = [Math.trunc(this.currenttargetSize), Math.trunc(this.currenttargetSize), targetThickness];
-            }
-
-            let randomPosition: Vector = [0, 0, 0];
-
-            if (axis === 0) {
-                randomPosition = [
-                    targetAxisPositionOffset,
-                    this.targetSurface.position[1] + // Base position
-                        Math.trunc(Math.random() * (this.targetSurface.size[1] * 2 - this.currenttargetSize * 2)) - // Increase random surface to cover possible spawns, accounting for brick size
-                        (this.targetSurface.size[1] - this.currenttargetSize), // Offset to the minimum to the corner
-                    this.targetSurface.position[2] +
-                        Math.trunc(Math.random() * (this.targetSurface.size[2] * 2 - this.currenttargetSize * 2)) -
-                        (this.targetSurface.size[2] - this.currenttargetSize),
-                ];
-            } else if (axis === 1) {
-                randomPosition = [
-                    this.targetSurface.position[0] +
-                        Math.trunc(Math.random() * (this.targetSurface.size[0] * 2 - this.currenttargetSize * 2)) -
-                        (this.targetSurface.size[0] - this.currenttargetSize),
-                    targetAxisPositionOffset,
-                    this.targetSurface.position[2] +
-                        Math.trunc(Math.random() * (this.targetSurface.size[2] * 2 - this.currenttargetSize * 2)) -
-                        (this.targetSurface.size[2] - this.currenttargetSize),
-                ];
-            } else {
-                randomPosition = [
-                    this.targetSurface.position[0] +
-                        Math.trunc(Math.random() * (this.targetSurface.size[0] * 2 - this.currenttargetSize * 2)) -
-                        (this.targetSurface.size[0] - this.currenttargetSize),
-                    this.targetSurface.position[1] +
-                        Math.trunc(Math.random() * (this.targetSurface.size[1] * 2 - this.currenttargetSize * 2)) -
-                        (this.targetSurface.size[1] - this.currenttargetSize),
-                    targetAxisPositionOffset,
-                ];
-            }
+            const chosenPosition = this.getRandomValidPosition();
+            const targetBrickSize = this.getTargetBrickSize();
 
             const brick: Brick = {
                 color: [255, 255, 255, 0],
-                position: randomPosition,
+                position: chosenPosition,
                 size: targetBrickSize,
             };
 
-            this.targetBricks.push(brick);
+            const target: Target = {
+                brick,
+                isMoving: false,
+                startPos: brick.position,
+                endPos: brick.position,
+                speed: this.gameState.movingTargetSpeed,
+            };
+
+            this.targetBricks.push(target);
 
             Runtime.omegga.loadSaveData(
                 {
@@ -264,9 +243,88 @@ export default class Axethrow {
                 { quiet: true }
             );
 
-            if (this.whenGameFinished - Date.now() < 0) {
+            if (this.gameState.finishDate - Date.now() < 0) {
                 clearInterval(interval2);
             }
         }, 2000);
     }
+
+    private getTargetBrickSize(): Vector {
+        const targetThickness = 2;
+
+        const difference: Vector = [
+            this.targetSurface.position[0] - this.startButtonPosition[0],
+            this.targetSurface.position[1] - this.startButtonPosition[1],
+            this.targetSurface.position[2] - this.startButtonPosition[2],
+        ];
+        const absoluteDifference: Vector = difference.map(Math.abs) as Vector;
+        const axis: number = absoluteDifference.indexOf(Math.max(...absoluteDifference));
+
+        let targetBrickSize: Vector = [0, 0, 0];
+
+        if (axis === 0) {
+            targetBrickSize = [targetThickness, Math.trunc(this.gameState.targetSize), Math.trunc(this.gameState.targetSize)];
+        } else if (axis === 1) {
+            targetBrickSize = [Math.trunc(this.gameState.targetSize), targetThickness, Math.trunc(this.gameState.targetSize)];
+        } else {
+            targetBrickSize = [Math.trunc(this.gameState.targetSize), Math.trunc(this.gameState.targetSize), targetThickness];
+        }
+
+        return targetBrickSize;
+    }
+
+    private getRandomValidPosition(): Vector {
+        // Find the correct facing direction
+        const difference: Vector = [
+            this.targetSurface.position[0] - this.startButtonPosition[0],
+            this.targetSurface.position[1] - this.startButtonPosition[1],
+            this.targetSurface.position[2] - this.startButtonPosition[2],
+        ];
+        const absoluteDifference: Vector = difference.map(Math.abs) as Vector;
+        const axis: number = absoluteDifference.indexOf(Math.max(...absoluteDifference));
+        const shouldFacePositive: boolean = difference[axis] < 0;
+        const targetThickness = 2;
+        const targetAxisPositionOffset = shouldFacePositive
+            ? this.targetSurface.position[axis] + this.targetSurface.size[axis] + targetThickness
+            : this.targetSurface.position[axis] + this.targetSurface.size[axis] - targetThickness;
+
+        // Generate a hopefully non colliding random position on the surface of the target surface brick.
+        let randomPosition: Vector = [0, 0, 0];
+
+        if (axis === 0) {
+            randomPosition = [
+                targetAxisPositionOffset,
+                this.targetSurface.position[1] + // Base position
+                    Math.trunc(Math.random() * (this.targetSurface.size[1] * 2 - this.gameState.targetSize * 2)) - // Increase random surface to cover possible spawns, accounting for brick size
+                    (this.targetSurface.size[1] - this.gameState.targetSize), // Offset to the minimum to the corner
+                this.targetSurface.position[2] +
+                    Math.trunc(Math.random() * (this.targetSurface.size[2] * 2 - this.gameState.targetSize * 2)) -
+                    (this.targetSurface.size[2] - this.gameState.targetSize),
+            ];
+        } else if (axis === 1) {
+            randomPosition = [
+                this.targetSurface.position[0] +
+                    Math.trunc(Math.random() * (this.targetSurface.size[0] * 2 - this.gameState.targetSize * 2)) -
+                    (this.targetSurface.size[0] - this.gameState.targetSize),
+                targetAxisPositionOffset,
+                this.targetSurface.position[2] +
+                    Math.trunc(Math.random() * (this.targetSurface.size[2] * 2 - this.gameState.targetSize * 2)) -
+                    (this.targetSurface.size[2] - this.gameState.targetSize),
+            ];
+        } else {
+            randomPosition = [
+                this.targetSurface.position[0] +
+                    Math.trunc(Math.random() * (this.targetSurface.size[0] * 2 - this.gameState.targetSize * 2)) -
+                    (this.targetSurface.size[0] - this.gameState.targetSize),
+                this.targetSurface.position[1] +
+                    Math.trunc(Math.random() * (this.targetSurface.size[1] * 2 - this.gameState.targetSize * 2)) -
+                    (this.targetSurface.size[1] - this.gameState.targetSize),
+                targetAxisPositionOffset,
+            ];
+        }
+
+        return randomPosition;
+    }
+
+    private getRandomValidTrack() {}
 }
