@@ -5,10 +5,6 @@ import { checkLineBox } from "./intersection";
 
 type Target = {
     brick: Brick;
-    isMoving: boolean;
-    startPos: Vector;
-    endPos: Vector;
-    speed: number;
     points: number;
 };
 
@@ -18,9 +14,6 @@ type GameState = {
     startDate: number;
     finishDate: number;
     playerScore: number;
-    movingTargetPercent: number;
-    movingTargetSpeed: number;
-    movingTargetSpeedVariance: number;
 };
 
 export default class Axethrow {
@@ -45,9 +38,6 @@ export default class Axethrow {
         startDate: 0,
         finishDate: 0,
         playerScore: 0,
-        movingTargetPercent: 0,
-        movingTargetSpeed: 6,
-        movingTargetSpeedVariance: 0,
     };
 
     public gameState: GameState = this.startingGameState;
@@ -238,10 +228,6 @@ export default class Axethrow {
 
                 const target: Target = {
                     brick,
-                    isMoving: false,
-                    startPos: brick.position,
-                    endPos: brick.position,
-                    speed: this.gameState.movingTargetSpeed,
                     points: this.targetProperties[targetIndex].points,
                 };
 
