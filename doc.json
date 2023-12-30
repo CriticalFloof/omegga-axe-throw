@@ -26,6 +26,16 @@
     },
     "commands": [
         {
+            "name": "axethrow_top",
+            "description": "Prints the top 5 players with the highest scores",
+            "example": "/axethrow_top"
+        },
+        {
+            "name": "axethrow_pb",
+            "description": "Prints your personal highscore",
+            "example": "/axethrow_pb"
+        },
+        {
             "name": "axethrow_setup",
             "description": "starts the axe throw setup procedure.",
             "example": "/axethrow_setup"
