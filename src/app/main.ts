@@ -1,7 +1,6 @@
-import { Brick, BrickInteraction, OL, OmeggaPlayer, PC, PS, Vector } from "omegga";
+import { Brick, BrickInteraction, OL, PC, PS, Vector } from "omegga";
 import Command from "src/lib/commands";
 import Axethrow from "./axethrow";
-import ProjectileTracker from "src/lib/projectile_tracker";
 
 /**
  * Runtime's persistent storage.
