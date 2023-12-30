@@ -14,7 +14,7 @@ export default class Plugin implements OmeggaPlugin<Record<string, unknown>, Rec
     }
 
     async init() {
-        Runtime.main(this.omegga, this.config, this.store);
+        await Runtime.main(this.omegga, this.config, this.store);
         return { registeredCommands: Command.getList() };
     }
 

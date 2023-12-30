@@ -17,6 +17,11 @@
             "description": "Loads the setup from the plugin's cache, useful for persisting the setup logic between sessions.",
             "default": true,
             "type": "boolean"
+        },
+        "Poll_Rate": {
+            "description": "The rate in miliseconds at which the plugin querys projectile data. The lower the value, the more accurate. (Setting this too low will cause lag)",
+            "default": 100,
+            "type": "number"
         }
     },
     "commands": [
