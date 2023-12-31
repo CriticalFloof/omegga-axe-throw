@@ -22,6 +22,11 @@
             "description": "The rate in miliseconds at which the plugin querys projectile data. The lower the value, the more accurate. (Setting this too low will cause lag)",
             "default": 100,
             "type": "number"
+        },
+        "Reset_Leaderboard": {
+            "description": "(Dangerous!) Clears the leaderboard next time the plugin is ran.",
+            "default": false,
+            "type": "boolean"
         }
     },
     "commands": [

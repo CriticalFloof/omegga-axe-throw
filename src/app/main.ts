@@ -18,6 +18,7 @@ export type Storage = {
  * Runtime's WebUI configuration.
  */
 export type Configuration = {
+    Reset_Leaderboard: boolean;
     Load_Cache: boolean;
     Poll_Rate: number;
     Start_Game_Length: number;
@@ -33,6 +34,10 @@ export default class Runtime {
 
     static async main(omegga: OL, config: PC<Configuration>, store: PS<Storage>) {
         [this.omegga, this.config, this.store] = [omegga, config, store];
+
+        if (this.config.Reset_Leaderboard) {
+            this.store.set("leaderboard", {});
+        }
 
         // Setup Cache
         const cache: Storage["cache"] | null = Runtime.config.Load_Cache ? await this.store.get("cache") : null;
