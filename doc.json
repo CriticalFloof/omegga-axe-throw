@@ -24,7 +24,7 @@
             "type": "number"
         },
         "Reset_Leaderboard": {
-            "description": "(Dangerous!) Clears the leaderboard next time the plugin is ran.",
+            "description": "(Dangerous!) Clears the leaderboard upon start up.",
             "default": false,
             "type": "boolean"
         }
